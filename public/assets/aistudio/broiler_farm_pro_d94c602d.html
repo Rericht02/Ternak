@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Broiler Farm Management Pro</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            farm: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-farm-900 via-farm-800 to-emerald-900 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-emerald-600/30 border border-emerald-500/40 rounded-xl backdrop-blur">
+          <i data-lucide="activity" class="w-6 h-6 text-emerald-300"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              Broiler Farm Pro
+              <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-medium">v2.5</span>
+            </h1>
+          </div>
+          <p class="text-xs text-emerald-200/80">Sistem Pencatatan, FCR, IP & Proyeksi Laba Mandiri</p>
+        </div>
+      </div>
+
+      <!-- Quick Selector Kandang & Mode Badge -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center bg-emerald-950/50 border border-emerald-700/60 rounded-lg px-3 py-1.5 text-xs text-emerald-100">
+          <i data-lucide="home" class="w-3.5 h-3.5 mr-1.5 text-emerald-400"></i>
+          <span class="text-emerald-300 mr-1">Kandang Aktif:</span>
+          <select id="quickCycleSelect" class="bg-transparent font-semibold text-white focus:outline-none cursor-pointer border-none text-xs">
+            <!-- Dynamic options -->
+          </select>
+        </div>
+        <div class="hidden sm:flex items-center gap-1.5 bg-emerald-700/40 text-emerald-200 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-emerald-600/30">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-300"></i>
+          <span>Offline & Tersimpan Lokal</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="bg-white border-b border-slate-200 shadow-sm sticky top-[61px] z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav id="navTabs" class="flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5 scrollbar-none" aria-label="Tabs">
+        <!-- Rendered by JS -->
+      </nav>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    <div id="appContainer"></div>
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Custom Confirmation Modal (No alert/confirm used) -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all border border-slate-100">
+      <div class="flex items-center gap-3 mb-4">
+        <div id="confirmModalIcon" class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <h3 id="confirmModalTitle" class="text-base font-bold text-slate-800">Konfirmasi Aksi</h3>
+      </div>
+      <p id="confirmModalMessage" class="text-sm text-slate-600 mb-6 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+      <div class="flex justify-end gap-2.5">
+        <button id="confirmModalCancel" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Batal</button>
+        <button id="confirmModalSubmit" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <div class="flex items-center gap-2">
+        <i data-lucide="feather" class="w-4 h-4 text-farm-600"></i>
+        <span><strong>Broiler Farm Pro</strong> • Sistem Informasi Pengawasan Ternak Unggas</span>
+      </div>
+      <div>Standar Standarisasi Standar FCR, IP & Biomassa Terintegrasi</div>
+    </div>
+  </footer>
+
+  <script>
+    'use strict';
+
+    /* ==============================================================
+       1. STATE & STORAGE MANAGEMENT
+       ============================================================== */
+    const STORAGE_KEY = 'broiler_farm_pro_v2_data';
+
+    const defaultSeed = () => ({
+      cycles: [
+        {
+          id: 'cycle-demo-1',
+          farm: 'Peternakan Berkah Mandiri',
+          house: 'Kandang Closed House 1',
+          date: new Date(Date.now() - 25 * 86400000).toISOString().slice(0, 10), // Hari ke-25
+          doc: 6000,
+          docPrice: 7500,
+          targetAge: 35,
+          targetWeight: 2.15,
+          targetFcr: 1.52,
+          sellPrice: 22000
+        }
+      ],
+      active: 'cycle-demo-1',
+      daily: [
+        // 25 Days of realistic demo records
+        { id: 'd1', cycleId: 'cycle-demo-1', date: offsetDate(-24), dead: 18, cull: 4, weight: 48, samples: 100, temp: 33, humidity: 65, water: 240, note: 'DOC chick-in seragam & lincah' },
+        { id: 'd2', cycleId: 'cycle-demo-1', date: offsetDate(-23), dead: 12, cull: 2, weight: 65, samples: 100, temp: 32.5, humidity: 65, water: 290, note: 'Pemberian vitamin brooding' },
+        { id: 'd3', cycleId: 'cycle-demo-1', date: offsetDate(-22), dead: 10, cull: 1, weight: 88, samples: 100, temp: 32, humidity: 68, water: 340, note: 'Kondisi feses normal' },
+        { id: 'd7', cycleId: 'cycle-demo-1', date: offsetDate(-18), dead: 8, cull: 3, weight: 195, samples: 150, temp: 30, humidity: 70, water: 580, note: 'Vaksin ND-IB tetes mata' },
+        { id: 'd14', cycleId: 'cycle-demo-1', date: offsetDate(-11), dead: 6, cull: 2, weight: 480, samples: 150, temp: 28, humidity: 72, water: 1100, note: 'Pelebaran sekat kandang' },
+        { id: 'd21', cycleId: 'cycle-demo-1', date: offsetDate(-4), dead: 7, cull: 3, weight: 980, samples: 200, temp: 26.5, humidity: 75, water: 1750, note: 'Vaksin Gumboro & cek ventilasi' },
+        { id: 'd25', cycleId: 'cycle-demo-1', date: offsetDate(0), dead: 9, cull: 2, weight: 1320, samples: 200, temp: 26, humidity: 74, water: 2150, note: 'Sampling umur 25 hari normal' },
+      ],
+      feed: [
+        { id: 'f1', cycleId: 'cycle-demo-1', date: offsetDate(-24), kind: 'masuk', kg: 4500, price: 9200, note: 'Pre-starter crumble (SOP Chick In)' },
+        { id: 'f2', cycleId: 'cycle-demo-1', date: offsetDate(-15), kind: 'masuk', kg: 6000, price: 8800, note: 'Starter pellet (Tahap 2)' },
+        { id: 'f3', cycleId: 'cycle-demo-1', date: offsetDate(-24), kind: 'pakai', kg: 180, price: 9200, note: 'Konsumsi hari 1-3' },
+        { id: 'f4', cycleId: 'cycle-demo-1', date: offsetDate(-18), kind: 'pakai', kg: 620, price: 9200, note: 'Konsumsi minggu ke-1' },
+        { id: 'f5', cycleId: 'cycle-demo-1', date: offsetDate(-11), kind: 'pakai', kg: 1950, price: 9000, note: 'Konsumsi minggu ke-2' },
+        { id: 'f6', cycleId: 'cycle-demo-1', date: offsetDate(-4), kind: 'pakai', kg: 3400, price: 8800, note: 'Konsumsi minggu ke-3' },
+        { id: 'f7', cycleId: 'cycle-demo-1', date: offsetDate(0), kind: 'pakai', kg: 2100, price: 8800, note: 'Konsumsi s/d hari 25' },
+      ],
+      harvest: [
+        { id: 'h1', cycleId: 'cycle-demo-1', date: offsetDate(-1), birds: 600, kg: 750, price: 22500, buyer: 'UD. Hasil Unggas Berkah (Penjarangan)' }
+      ],
+      expenses: [
+        { id: 'e1', cycleId: 'cycle-demo-1', date: offsetDate(-25), category: 'Sekam', amount: 1500000, note: 'Alas sekam 100 karung' },
+        { id: 'e2', cycleId: 'cycle-demo-1', date: offsetDate(-24), category: 'Gas/Pemanas', amount: 2400000, note: 'Gas LPG pemanas indukan 8 tabung besar' },
+        { id: 'e3', cycleId: 'cycle-demo-1', date: offsetDate(-20), category: 'OVK (Obat/Vaksin/Kimia)', amount: 1850000, note: 'Paket vitamin, vaksin ND-IB, desinfektan' },
+        { id: 'e4', cycleId: 'cycle-demo-1', date: offsetDate(-5), category: 'Listrik', amount: 1250000, note: 'Token listrik blower kandang' },
+        { id: 'e5', cycleId: 'cycle-demo-1', date: offsetDate(0), category: 'Tenaga Kerja', amount: 2000000, note: 'Uang operasional ABK minggu berjalan' },
+      ]
+    });
+
+    function offsetDate(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    let state = loadState();
+    let currentTab = 'dashboard';
+    let charts = {};
+
+    function loadState() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error('Gagal membaca localStorage', e);
+      }
+      const initial = defaultSeed();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+      return initial;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        showToast('Penyimpanan lokal penuh atau bermasalah!', 'error');
+      }
+    }
+
+    function uid() {
+      return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+
+    /* Helper Formatters */
+    const toIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val) || 0);
+    const toNum = (val, dec = 2) => {
+      const n = Number(val);
+      return Number.isFinite(n) ? n.toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec }) : '—';
+    };
+    const n = (val) => Number(val) || 0;
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    /* ==============================================================
+       2. REPOSITORY & BUSINESS CALCULATIONS
+       ============================================================== */
+    function getActiveCycle() {
+      return state.cycles.find(c => c.id === state.active) || state.cycles[0];
+    }
+
+    function getRows(type) {
+      const cycle = getActiveCycle();
+      if (!cycle) return [];
+      return (state[type] || []).filter(item => item.cycleId === cycle.id);
+    }
+
+    function getAgeAtDate(dateStr) {
+      const cycle = getActiveCycle();
+      if (!cycle || !cycle.date || !dateStr) return 0;
+      const t1 = Date.parse(cycle.date + 'T00:00:00');
+      const t2 = Date.parse(dateStr + 'T00:00:00');
+      return Math.round((t2 - t1) / 86400000);
+    }
+
+    function getLivePopulationAt(dateStr, excludeId = null) {
+      const cycle = getActiveCycle();
+      if (!cycle) return 0;
+      const daily = getRows('daily');
+      const harvest = getRows('harvest');
+
+      let dead = 0;
+      let cull = 0;
+      let harvestBirds = 0;
+
+      for (const r of daily) {
+        if (r.id !== excludeId && r.date <= dateStr) {
+          dead += n(r.dead);
+          cull += n(r.cull);
+        }
+      }
+
+      for (const h of harvest) {
+        if (h.id !== excludeId && h.date <= dateStr) {
+          harvestBirds += n(h.birds);
+        }
+      }
+
+      return Math.max(0, cycle.doc - dead - cull - harvestBirds);
+    }
+
+    function calculateStats() {
+      const cycle = getActiveCycle();
+      if (!cycle) return null;
+
+      const daily = getRows('daily');
+      const feed = getRows('feed');
+      const harvest = getRows('harvest');
+      const expenses = getRows('expenses');
+
+      // 1. Populasi & Mortalitas
+      const totalDead = daily.reduce((acc, r) => acc + n(r.dead), 0);
+      const totalCull = daily.reduce((acc, r) => acc + n(r.cull), 0);
+      const totalDepleted = totalDead + totalCull;
+      const totalHarvestBirds = harvest.reduce((acc, r) => acc + n(r.birds), 0);
+      const totalHarvestKg = harvest.reduce((acc, r) => acc + n(r.kg), 0);
+      const currentLive = Math.max(0, cycle.doc - totalDepleted - totalHarvestBirds);
+      const mortalityRate = cycle.doc > 0 ? (totalDead / cycle.doc) * 100 : 0;
+      const depletionRate = cycle.doc > 0 ? (totalDepleted / cycle.doc) * 100 : 0;
+      const survivalRate = cycle.doc > 0 ? ((cycle.doc - totalDepleted) / cycle.doc) * 100 : 0;
+
+      // 2. Umur & Bobot
+      const today = new Date().toISOString().slice(0, 10);
+      const calendarAge = Math.max(0, getAgeAtDate(today));
+      
+      const sortedDailyWithWeight = [...daily].filter(r => n(r.weight) > 0).sort((a, b) => b.date.localeCompare(a.date));
+      const lastSampling = sortedDailyWithWeight[0];
+      const currentAvgWeightKg = lastSampling ? n(lastSampling.weight) / 1000 : 0;
+      const currentBiomassKg = currentLive * currentAvgWeightKg;
+      const totalBiomassGain = currentBiomassKg + totalHarvestKg;
+
+      // 3. Pakan
+      const feedReceived = feed.filter(r => r.kind === 'masuk').reduce((acc, r) => acc + n(r.kg), 0);
+      const feedConsumed = feed.filter(r => r.kind === 'pakai').reduce((acc, r) => acc + n(r.kg), 0);
+      const feedStock = feedReceived - feedConsumed;
+
+      // Rata-rata harga beli pakan masuk
+      const totalFeedPurchasedCost = feed.filter(r => r.kind === 'masuk').reduce((acc, r) => acc + (n(r.kg) * n(r.price)), 0);
+      const avgFeedPricePerKg = feedReceived > 0 ? totalFeedPurchasedCost / feedReceived : 8800;
+
+      // Biaya pakan dikonsumsi
+      const feedCostActual = feed.filter(r => r.kind === 'pakai').reduce((acc, r) => acc + (n(r.kg) * (n(r.price) || avgFeedPricePerKg)), 0);
+
+      // 4. FCR (Feed Conversion Ratio)
+      // FCR = Total Pakan Dikonsumsi / (Biomassa Hidup saat ini + Bobot Total Panen yang telah dikeluarkan)
+      const runningFcr = totalBiomassGain > 0 ? feedConsumed / totalBiomassGain : null;
+
+      // 5. Indeks Performa (IP / EPEF)
+      // IP = (Daya Hidup (%) * Bobot Rata-rata (kg)) / (FCR * Umur rata-rata (hari)) * 100
+      let ip = null;
+      let effectiveAge = calendarAge > 0 ? calendarAge : 1;
+      if (runningFcr && runningFcr > 0 && currentAvgWeightKg > 0 && effectiveAge > 0) {
+        ip = (survivalRate * currentAvgWeightKg) / (runningFcr * effectiveAge) * 100;
+      }
+
+      // Klasifikasi IP
+      let ipCategory = { text: 'Belum Ada', color: 'bg-slate-100 text-slate-600 border-slate-200' };
+      if (ip !== null) {
+        if (ip >= 400) ipCategory = { text: 'Istimewa (Superb)', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+        else if (ip >= 351) ipCategory = { text: 'Baik (Good)', color: 'bg-green-100 text-green-800 border-green-300' };
+        else if (ip >= 325) ipCategory = { text: 'Cukup (Average)', color: 'bg-amber-100 text-amber-800 border-amber-300' };
+        else ipCategory = { text: 'Kurang (Underperform)', color: 'bg-rose-100 text-rose-800 border-rose-300' };
+      }
+
+      // 6. Finansial Realisasi Berjalan
+      const docCost = cycle.doc * cycle.docPrice;
+      const expenseCost = expenses.reduce((acc, r) => acc + n(r.amount), 0);
+      const runningCost = docCost + feedCostActual + expenseCost;
+      const harvestRevenue = harvest.reduce((acc, r) => acc + (n(r.kg) * n(r.price)), 0);
+
+      // HPP Sementara per kg biomassa terbentuk
+      const hppPerKg = totalBiomassGain > 0 ? runningCost / totalBiomassGain : 0;
+      const hppPerBird = (cycle.doc - totalDepleted) > 0 ? runningCost / (cycle.doc - totalDepleted) : 0;
+
+      // 7. Proyeksi Sampai Panen Target
+      const daysRemaining = Math.max(0, cycle.targetAge - calendarAge);
+      // Asumsi kematian sisa 0.08% per hari hingga panen
+      const projectedMortalityRemaining = Math.round(currentLive * 0.0008 * daysRemaining);
+      const projectedHarvestBirds = Math.max(0, currentLive - projectedMortalityRemaining);
+      const projectedHarvestKg = projectedHarvestBirds * cycle.targetWeight;
+      const projectedTotalTonase = totalHarvestKg + projectedHarvestKg;
+
+      // Kebutuhan pakan tambahan untuk mencapai target FCR
+      const targetTotalFeedNeeded = projectedTotalTonase * cycle.targetFcr;
+      const projectedRemainingFeedKg = Math.max(0, targetTotalFeedNeeded - feedConsumed);
+      const projectedRemainingFeedCost = projectedRemainingFeedKg * avgFeedPricePerKg;
+
+      // Proyeksi Total
+      const projectedTotalCost = runningCost + projectedRemainingFeedCost;
+      const projectedTotalRevenue = harvestRevenue + (projectedHarvestKg * cycle.sellPrice);
+      const projectedProfit = projectedTotalRevenue - projectedTotalCost;
+
+      // Break Even Point (BEP)
+      const bepPricePerKg = projectedTotalTonase > 0 ? projectedTotalCost / projectedTotalTonase : 0;
+      const bepKgNeeded = cycle.sellPrice > 0 ? projectedTotalCost / cycle.sellPrice : 0;
+
+      return {
+        cycle,
+        totalDead,
+        totalCull,
+        totalDepleted,
+        totalHarvestBirds,
+        totalHarvestKg,
+        currentLive,
+        mortalityRate,
+        depletionRate,
+        survivalRate,
+        calendarAge,
+        currentAvgWeightKg,
+        currentBiomassKg,
+        totalBiomassGain,
+        feedReceived,
+        feedConsumed,
+        feedStock,
+        avgFeedPricePerKg,
+        feedCostActual,
+        runningFcr,
+        ip,
+        ipCategory,
+        docCost,
+        expenseCost,
+        runningCost,
+        harvestRevenue,
+        hppPerKg,
+        hppPerBird,
+        daysRemaining,
+        projectedHarvestBirds,
+        projectedHarvestKg,
+        projectedTotalTonase,
+        projectedRemainingFeedKg,
+        projectedTotalCost,
+        projectedTotalRevenue,
+        projectedProfit,
+        bepPricePerKg,
+        bepKgNeeded
+      };
+    }
+
+    /* ==============================================================
+       3. NAVIGATION & UI CONTROLLER
+       ============================================================== */
+    const navItems = [
+      { id: 'dashboard', label: 'Dashboard Utama', icon: 'layout-dashboard' },
+      { id: 'cycles', label: 'Kandang & Siklus', icon: 'warehouse' },
+      { id: 'daily', label: 'Pencatatan Harian', icon: 'clipboard-pen' },
+      { id: 'feed', label: 'Pakan & Stok', icon: 'boxes' },
+      { id: 'harvest', label: 'Panen', icon: 'truck' },
+      { id: 'expenses', label: 'Biaya OVK & Ops', icon: 'wallet-cards' },
+      { id: 'forecast', label: 'Kalkulator IP & Proyeksi', icon: 'calculator' },
+      { id: 'backup', label: 'Ekspor & Backup', icon: 'database-zap' }
+    ];
+
+    function renderNav() {
+      const container = document.getElementById('navTabs');
+      container.innerHTML = navItems.map(item => {
+        const isActive = currentTab === item.id;
+        return `
+          <button 
+            type="button"
+            onclick="switchTab('${item.id}')"
+            class="flex items-center gap-2 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg whitespace-nowrap transition-all duration-150 ${
+              isActive 
+                ? 'bg-farm-700 text-white shadow-sm ring-1 ring-farm-800' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }"
+          >
+            <i data-lucide="${item.icon}" class="w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}"></i>
+            <span>${item.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      // Update Quick Cycle Selector
+      const cycleSelect = document.getElementById('quickCycleSelect');
+      if (cycleSelect) {
+        cycleSelect.innerHTML = state.cycles.map(c => 
+          `<option value="${esc(c.id)}" ${c.id === state.active ? 'selected' : ''}>${esc(c.house)} (${esc(c.farm)})</option>`
+        ).join('');
+        cycleSelect.onchange = (e) => {
+          setActiveCycle(e.target.value);
+        };
+      }
+
+      lucide.createIcons();
+    }
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+      renderNav();
+      renderContent();
+    }
+
+    function setActiveCycle(cycleId) {
+      state.active = cycleId;
+      saveState();
+      renderNav();
+      renderContent();
+      showToast('Kandang aktif berhasil diganti.');
+    }
+
+    function renderContent() {
+      const container = document.getElementById('appContainer');
+      const s = calculateStats();
+
+      // Clean old chart instances
+      Object.keys(charts).forEach(key => {
+        if (charts[key]) charts[key].destroy();
+      });
+      charts = {};
+
+      if (!s) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-500 bg-white rounded-2xl shadow-sm border border-slate-200">
+          Belum ada siklus kandang aktif. Tambahkan siklus baru di menu Kandang & Siklus.
+        </div>`;
+        return;
+      }
+
+      switch (currentTab) {
+        case 'dashboard':
+          container.innerHTML = getDashboardHTML(s);
+          initDashboardCharts(s);
+          break;
+        case 'cycles':
+          container.innerHTML = getCyclesHTML(s);
+          break;
+        case 'daily':
+          container.innerHTML = getDailyHTML(s);
+          break;
+        case 'feed':
+          container.innerHTML = getFeedHTML(s);
+          break;
+        case 'harvest':
+          container.innerHTML = getHarvestHTML(s);
+          break;
+        case 'expenses':
+          container.innerHTML = getExpensesHTML(s);
+          break;
+        case 'forecast':
+          container.innerHTML = getForecastHTML(s);
+          break;
+        case 'backup':
+          container.innerHTML = getBackupHTML(s);
+          break;
+      }
+
+      lucide.createIcons();
+    }
+
+    /* ==============================================================
+       4. HTML VIEW TEMPLATES
+       ============================================================== */
+
+    /* DASHBOARD VIEW */
+    function getDashboardHTML(s) {
+      const c = s.cycle;
+      const weightProgress = Math.min(100, (s.currentAvgWeightKg / c.targetWeight) * 100);
+      const ageProgress = Math.min(100, (s.calendarAge / c.targetAge) * 100);
+      const isMortalityWarn = s.mortalityRate > 4.0;
+
+      return `
+        <div class="space-y-6">
+          <!-- Overview Banner -->
+          <div class="bg-gradient-to-r from-emerald-800 to-farm-700 rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="bg-emerald-500/30 text-emerald-100 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-emerald-400/30">${esc(c.farm)}</span>
+                <span class="text-xs text-emerald-200">Chick-in: ${esc(c.date)}</span>
+              </div>
+              <h2 class="text-2xl font-extrabold tracking-tight">${esc(c.house)}</h2>
+              <p class="text-xs text-emerald-100/90 mt-1">
+                Populasi Awal: <strong>${toNum(c.doc, 0)} DOC</strong> • Target Panen: <strong>Hari ke-${c.targetAge} (${toNum(c.targetWeight, 2)} kg/ekor)</strong>
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="bg-emerald-950/40 backdrop-blur border border-emerald-500/30 px-4 py-2.5 rounded-xl text-center">
+                <div class="text-xs text-emerald-200">Umur Pemeliharaan</div>
+                <div class="text-2xl font-black text-white">Hari ${s.calendarAge}</div>
+              </div>
+              <div class="bg-emerald-950/40 backdrop-blur border border-emerald-500/30 px-4 py-2.5 rounded-xl text-center">
+                <div class="text-xs text-emerald-200">Daya Hidup (SR)</div>
+                <div class="text-2xl font-black text-white">${toNum(s.survivalRate, 1)}%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Populasi Hidup -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">Populasi di Kandang</span>
+                <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>
+              </div>
+              <div class="text-xl sm:text-2xl font-black text-slate-800">${toNum(s.currentLive, 0)} <span class="text-xs font-normal text-slate-500">ekor</span></div>
+              <div class="text-[11px] text-slate-400 mt-1">Dari total ${toNum(c.doc, 0)} DOC masuk</div>
+            </div>
+
+            <!-- Mortalitas -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">Mortalitas & Afkir</span>
+                <i data-lucide="skull" class="w-4 h-4 ${isMortalityWarn ? 'text-rose-600' : 'text-slate-400'}"></i>
+              </div>
+              <div class="text-xl sm:text-2xl font-black ${isMortalityWarn ? 'text-rose-600' : 'text-slate-800'}">
+                ${toNum(s.depletionRate, 2)}%
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">Mati: ${s.totalDead} | Afkir: ${s.totalCull} ekor</div>
+            </div>
+
+            <!-- FCR Berjalan -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">FCR Berjalan</span>
+                <i data-lucide="scale" class="w-4 h-4 text-emerald-600"></i>
+              </div>
+              <div class="text-xl sm:text-2xl font-black text-slate-800">
+                ${s.runningFcr ? toNum(s.runningFcr, 3) : '—'}
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">Target FCR: ${toNum(c.targetFcr, 2)}</div>
+            </div>
+
+            <!-- Indeks Performa (IP) -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">Indeks Performa (IP)</span>
+                <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+              </div>
+              <div class="text-xl sm:text-2xl font-black text-slate-800">
+                ${s.ip ? toNum(s.ip, 1) : '—'}
+              </div>
+              <div class="mt-1">
+                <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border ${s.ipCategory.color}">
+                  ${s.ipCategory.text}
+                </span>
+              </div>
+            </div>
+
+            <!-- Bobot Terakhir -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">Bobot Rata-rata</span>
+                <i data-lucide="weight" class="w-4 h-4 text-emerald-600"></i>
+              </div>
+              <div class="text-xl sm:text-2xl font-black text-slate-800">
+                ${s.currentAvgWeightKg > 0 ? toNum(s.currentAvgWeightKg, 3) + ' kg' : 'Belum Ada'}
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">Biomassa: ±${toNum(s.currentBiomassKg, 0)} kg</div>
+            </div>
+
+            <!-- Konsumsi & Stok Pakan -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">Stok Sisa Pakan</span>
+                <i data-lucide="package" class="w-4 h-4 text-emerald-600"></i>
+              </div>
+              <div class="text-xl sm:text-2xl font-black ${s.feedStock < 500 ? 'text-amber-600' : 'text-slate-800'}">
+                ${toNum(s.feedStock, 1)} <span class="text-xs font-normal text-slate-500">kg</span>
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">Terpakai: ${toNum(s.feedConsumed, 0)} kg</div>
+            </div>
+
+            <!-- HPP Sementara -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">HPP Sementara / kg</span>
+                <i data-lucide="calculator" class="w-4 h-4 text-emerald-600"></i>
+              </div>
+              <div class="text-lg sm:text-xl font-black text-slate-800">
+                ${toIDR(s.hppPerKg)}
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">Total Biaya: ${toIDR(s.runningCost)}</div>
+            </div>
+
+            <!-- Proyeksi Laba Bersih -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-slate-200 hover:border-farm-300 transition">
+              <div class="flex items-center justify-between text-slate-500 mb-2">
+                <span class="text-xs font-semibold">Proyeksi Laba Siklus</span>
+                <i data-lucide="trending-up" class="w-4 h-4 ${s.projectedProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}"></i>
+              </div>
+              <div class="text-lg sm:text-xl font-black ${s.projectedProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                ${toIDR(s.projectedProfit)}
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">Est. Omzet: ${toIDR(s.projectedTotalRevenue)}</div>
+            </div>
+          </div>
+
+          <!-- Progress Bars -->
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1.5">
+                <span>Pencapaian Bobot Panen (${toNum(s.currentAvgWeightKg, 2)} / ${toNum(c.targetWeight, 2)} kg)</span>
+                <span>${toNum(weightProgress, 1)}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div class="bg-emerald-600 h-3 rounded-full transition-all duration-500" style="width: ${weightProgress}%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1.5">
+                <span>Progress Umur Siklus (Hari ke-${s.calendarAge} / Target ${c.targetAge} hari)</span>
+                <span>${toNum(ageProgress, 1)}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div class="bg-farm-600 h-3 rounded-full transition-all duration-500" style="width: ${ageProgress}%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Kurva Pertumbuhan Bobot -->
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+                  Kurva Bobot Sampling vs Target (gram)
+                </h3>
+                <span class="text-xs text-slate-400">Pertumbuhan Ayam</span>
+              </div>
+              <div class="relative h-64">
+                <canvas id="weightGrowthChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Konsumsi Air & Pakan -->
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <i data-lucide="droplet" class="w-4 h-4 text-cyan-600"></i>
+                  Tren Konsumsi Air (Liter) & Kematian (Ekor)
+                </h3>
+                <span class="text-xs text-slate-400">Monitoring Kondisi</span>
+              </div>
+              <div class="relative h-64">
+                <canvas id="vitalChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Shortcuts -->
+          <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs text-emerald-900 font-medium">
+              <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
+              <span>Ingin mencatat perkembangan hari ini atau transaksi baru?</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="switchTab('daily')" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Catat Harian
+              </button>
+              <button onclick="switchTab('feed')" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-emerald-900 border border-emerald-200 text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition">
+                <i data-lucide="boxes" class="w-3.5 h-3.5"></i> Catat Pakan
+              </button>
+              <button onclick="switchTab('harvest')" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-emerald-900 border border-emerald-200 text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition">
+                <i data-lucide="truck" class="w-3.5 h-3.5"></i> Catat Panen
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function initDashboardCharts(s) {
+      const dailyRows = [...getRows('daily')].sort((a, b) => a.date.localeCompare(b.date));
+
+      // 1. Chart Pertumbuhan Bobot
+      const weightCtx = document.getElementById('weightGrowthChart');
+      if (weightCtx) {
+        const labels = dailyRows.map(r => `H-${getAgeAtDate(r.date)}`);
+        const actualData = dailyRows.map(r => n(r.weight) > 0 ? n(r.weight) : null);
+
+        // Standar kurva Cobb/Ross estimasi sederhana
+        const targetData = dailyRows.map(r => {
+          const age = getAgeAtDate(r.date);
+          if (age <= 0) return 42;
+          return Math.round(42 + 20 * Math.pow(age, 1.35));
+        });
+
+        charts.weightChart = new Chart(weightCtx, {
+          type: 'line',
+          data: {
+            labels: labels.length ? labels : ['H-0'],
+            datasets: [
+              {
+                label: 'Sampling Bobot Nyata (g)',
+                data: actualData.length ? actualData : [42],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#10b981'
+              },
+              {
+                label: 'Standar Referensi Target (g)',
+                data: targetData.length ? targetData : [42],
+                borderColor: '#94a3b8',
+                borderDash: [5, 5],
+                borderWidth: 1.5,
+                fill: false,
+                tension: 0.3,
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.dataset.label}: ${ctx.raw ? ctx.raw.toLocaleString('id-ID') + ' gram' : '—'}`
+                }
+              }
+            },
+            scales: {
+              y: { beginAtZero: true, title: { display: true, text: 'Bobot (gram)', font: { size: 10 } } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // 2. Chart Vitalitas: Air vs Kematian
+      const vitalCtx = document.getElementById('vitalChart');
+      if (vitalCtx) {
+        const labels = dailyRows.map(r => `H-${getAgeAtDate(r.date)}`);
+        const waterData = dailyRows.map(r => n(r.water));
+        const deadData = dailyRows.map(r => n(r.dead));
+
+        charts.vitalChart = new Chart(vitalCtx, {
+          data: {
+            labels: labels.length ? labels : ['H-0'],
+            datasets: [
+              {
+                type: 'bar',
+                label: 'Ayam Mati (Ekor)',
+                data: deadData.length ? deadData : [0],
+                backgroundColor: '#f43f5e',
+                borderRadius: 4,
+                yAxisID: 'y1'
+              },
+              {
+                type: 'line',
+                label: 'Konsumsi Air (Liter)',
+                data: waterData.length ? waterData : [0],
+                borderColor: '#06b6d4',
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                yAxisID: 'y'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            },
+            scales: {
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'Air (Liter)', font: { size: 10 } }
+              },
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'Kematian (Ekor)', font: { size: 10 } },
+                suggestedMax: 20
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+    }
+
+    /* KANDANG & SIKLUS VIEW */
+    function getCyclesHTML(s) {
+      return `
+        <div class="space-y-6">
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+              Buka Siklus / Kandang Baru
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">Daftarkan periode pemeliharaan baru untuk memulai pencatatan mandiri.</p>
+
+            <form id="newCycleForm" onsubmit="handleCycleSubmit(event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Peternakan / Farm</label>
+                  <input type="text" name="farm" required placeholder="Contoh: Berkah Mandiri Farm" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nama / Nomor Kandang</label>
+                  <input type="text" name="house" required placeholder="Contoh: Kandang Closed 2" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal DOC Masuk (Chick-in)</label>
+                  <input type="date" name="date" value="${new Date().toISOString().slice(0, 10)}" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah DOC Masuk (Ekor)</label>
+                  <input type="number" name="doc" min="1" value="5000" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Harga DOC per Ekor (Rp)</label>
+                  <input type="number" name="docPrice" min="0" value="7500" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Target Umur Panen (Hari)</label>
+                  <input type="number" name="targetAge" min="1" value="35" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Target Bobot Panen (Kg/Ekor)</label>
+                  <input type="number" step="0.01" name="targetWeight" min="0.1" value="2.10" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Target FCR Standar</label>
+                  <input type="number" step="0.01" name="targetFcr" min="0.5" value="1.55" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Target Harga Jual (Rp/Kg)</label>
+                  <input type="number" name="sellPrice" min="0" value="21500" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4"></i> Simpan Siklus Baru
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- List of Cycles -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <i data-lucide="list" class="w-5 h-5 text-emerald-600"></i>
+              Daftar Siklus Terdaftar
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Peternakan & Kandang</th>
+                    <th class="p-3">Chick-in</th>
+                    <th class="p-3">Populasi DOC</th>
+                    <th class="p-3">Target Panen</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${state.cycles.map(c => {
+                    const isActive = c.id === state.active;
+                    return `
+                      <tr class="${isActive ? 'bg-emerald-50/50' : 'hover:bg-slate-50'} transition">
+                        <td class="p-3">
+                          ${isActive 
+                            ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Aktif
+                               </span>`
+                            : `<button onclick="setActiveCycle('${esc(c.id)}')" class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-200 rounded-md border border-slate-300">Pilih</button>`
+                          }
+                        </td>
+                        <td class="p-3">
+                          <div class="font-bold text-slate-900">${esc(c.house)}</div>
+                          <div class="text-[11px] text-slate-400">${esc(c.farm)}</div>
+                        </td>
+                        <td class="p-3">${esc(c.date)}</td>
+                        <td class="p-3 font-semibold">${toNum(c.doc, 0)} ekor</td>
+                        <td class="p-3">Hari ke-${c.targetAge} (${toNum(c.targetWeight, 2)} kg / FCR ${toNum(c.targetFcr, 2)})</td>
+                        <td class="p-3 text-right">
+                          ${state.cycles.length > 1 
+                            ? `<button onclick="confirmDeleteCycle('${esc(c.id)}', '${esc(c.house)}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition" title="Hapus Siklus">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                               </button>`
+                            : `<span class="text-[10px] text-slate-400">Minimal 1 Siklus</span>`
+                          }
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* PENCATATAN HARIAN VIEW */
+    function getDailyHTML(s) {
+      const today = new Date().toISOString().slice(0, 10);
+      const estimatedAge = getAgeAtDate(today);
+      const rows = [...getRows('daily')].sort((a, b) => b.date.localeCompare(a.date));
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <i data-lucide="calendar-plus" class="w-5 h-5 text-emerald-600"></i>
+                  Input Data Harian Peternakan
+                </h3>
+                <p class="text-xs text-slate-500">Mencatat mortalitas, sampling bobot tubuh, suhu, dan kondisi kandang.</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-500">Sisa Populasi Terbuka:</span>
+                <span class="block text-sm font-bold text-emerald-700">${toNum(s.currentLive, 0)} Ekor</span>
+              </div>
+            </div>
+
+            <form id="dailyForm" onsubmit="handleDailySubmit(event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Catatan</label>
+                  <input type="date" id="dailyDateInput" name="date" value="${today}" onchange="updateEstimatedAge(this.value)" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <span id="ageBadge" class="text-[11px] text-emerald-700 font-semibold mt-1 inline-block">Umur: Hari ke-${estimatedAge}</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Ayam Mati (Ekor)</label>
+                  <input type="number" name="dead" min="0" value="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Ayam Afkir / Culling (Ekor)</label>
+                  <input type="number" name="cull" min="0" value="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Rata-rata Bobot Sampling (Gram)</label>
+                  <input type="number" step="0.1" name="weight" min="0" placeholder="Kosongkan jika tidak timbang" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Sampel Timbang (Ekor)</label>
+                  <input type="number" name="samples" min="0" placeholder="Contoh: 100 ekor" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Suhu Kandang (°C)</label>
+                  <input type="number" step="0.1" name="temp" placeholder="Contoh: 28.5" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Kelembapan Udara (%)</label>
+                  <input type="number" step="0.1" min="0" max="100" name="humidity" placeholder="Contoh: 70" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Konsumsi Air Minum (Liter)</label>
+                  <input type="number" step="0.1" name="water" min="0" placeholder="Total konsumsi air hari ini" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Tambahan / Perlakuan Khusus</label>
+                <input type="text" name="note" placeholder="Contoh: Vaksin gumboro via air minum, sekam ditambah di sekat 2" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div class="flex items-center gap-2 pt-2">
+                <button type="submit" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                  <i data-lucide="save" class="w-4 h-4"></i> Simpan Catatan Harian
+                </button>
+                <button type="reset" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- History Table -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-emerald-600"></i>
+                Riwayat Pencatatan Harian (${rows.length} catatan)
+              </h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Umur</th>
+                    <th class="p-3">Mati / Afkir</th>
+                    <th class="p-3">Bobot Sampling</th>
+                    <th class="p-3">Suhu / RH</th>
+                    <th class="p-3">Air Minum</th>
+                    <th class="p-3">Catatan</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rows.length === 0 ? `<tr><td colspan="8" class="p-4 text-center text-slate-400">Belum ada catatan harian.</td></tr>` : ''}
+                  ${rows.map(r => `
+                    <tr class="hover:bg-slate-50 transition">
+                      <td class="p-3 font-semibold text-slate-900">${esc(r.date)}</td>
+                      <td class="p-3"><span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">H-${getAgeAtDate(r.date)}</span></td>
+                      <td class="p-3">
+                        <span class="${n(r.dead) > 0 ? 'text-rose-600 font-bold' : ''}">${n(r.dead)} mati</span> / 
+                        <span>${n(r.cull)} afkir</span>
+                      </td>
+                      <td class="p-3 font-semibold">${n(r.weight) > 0 ? `${toNum(r.weight, 0)} g <span class="text-[10px] text-slate-400">(${r.samples || 0} spl)</span>` : '—'}</td>
+                      <td class="p-3">${r.temp ? `${r.temp}°C` : '—'} / ${r.humidity ? `${r.humidity}%` : '—'}</td>
+                      <td class="p-3">${r.water ? `${toNum(r.water, 0)} L` : '—'}</td>
+                      <td class="p-3 max-w-xs truncate text-slate-500" title="${esc(r.note)}">${esc(r.note) || '—'}</td>
+                      <td class="p-3 text-right">
+                        <button onclick="confirmDeleteItem('daily', '${esc(r.id)}', 'catatan tanggal ${esc(r.date)}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* PAKAN & STOK VIEW */
+    function getFeedHTML(s) {
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = [...getRows('feed')].sort((a, b) => b.date.localeCompare(a.date));
+
+      return `
+        <div class="space-y-6">
+          <!-- Feed Stats Header Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Total Pakan Masuk (Restock)</span>
+              <div class="text-2xl font-black text-slate-800">${toNum(s.feedReceived, 1)} <span class="text-xs font-normal text-slate-500">kg</span></div>
+              <div class="text-xs text-slate-400 mt-1">± ${toNum(s.feedReceived / 50, 1)} sak (karung 50kg)</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Total Pakan Dikonsumsi</span>
+              <div class="text-2xl font-black text-emerald-700">${toNum(s.feedConsumed, 1)} <span class="text-xs font-normal text-slate-500">kg</span></div>
+              <div class="text-xs text-slate-400 mt-1">Total nilai konsumsi: ${toIDR(s.feedCostActual)}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Sisa Stok di Gudang</span>
+              <div class="text-2xl font-black ${s.feedStock < 500 ? 'text-rose-600' : 'text-slate-800'}">
+                ${toNum(s.feedStock, 1)} <span class="text-xs font-normal text-slate-500">kg</span>
+              </div>
+              <div class="text-xs text-slate-400 mt-1">Rata-rata: ${toIDR(s.avgFeedPricePerKg)} / kg</div>
+            </div>
+          </div>
+
+          <!-- Feed Form -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+              Catat Transaksi Pakan (Masuk / Pakai)
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">Pakan masuk menambah stok gudang. Pakan konsumsi akan dihitung ke FCR & HPP berjalan.</p>
+
+            <form id="feedForm" onsubmit="handleFeedSubmit(event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
+                  <input type="date" name="date" value="${today}" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Transaksi</label>
+                  <select name="kind" id="feedKindSelect" onchange="adjustFeedPriceDefault(this.value)" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="pakai">Pakan Dikonsumsi (Pakai Harian)</option>
+                    <option value="masuk">Pakan Masuk (Pembelian/Restock)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Pakan (Kg)</label>
+                  <input type="number" step="0.01" name="kg" min="0.1" placeholder="Contoh: 250" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Harga per Kg (Rp)</label>
+                  <input type="number" id="feedPriceInput" name="price" value="${Math.round(s.avgFeedPricePerKg)}" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Pakan / Keterangan</label>
+                  <input type="text" name="note" placeholder="Contoh: Pre-starter BR-1" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4"></i> Simpan Transaksi Pakan
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Feed History -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <i data-lucide="history" class="w-5 h-5 text-emerald-600"></i>
+              Riwayat Transaksi Pakan
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Tipe</th>
+                    <th class="p-3">Jumlah (Kg)</th>
+                    <th class="p-3">Harga / Kg</th>
+                    <th class="p-3">Total Nilai</th>
+                    <th class="p-3">Keterangan</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rows.length === 0 ? `<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada transaksi pakan.</td></tr>` : ''}
+                  ${rows.map(r => {
+                    const isMasuk = r.kind === 'masuk';
+                    return `
+                      <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-900">${esc(r.date)}</td>
+                        <td class="p-3">
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            isMasuk ? 'bg-sky-100 text-sky-800 border border-sky-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          }">
+                            ${isMasuk ? '<i data-lucide="arrow-down-left" class="w-3 h-3"></i> Masuk (Restock)' : '<i data-lucide="arrow-up-right" class="w-3 h-3"></i> Pakai (Konsumsi)'}
+                          </span>
+                        </td>
+                        <td class="p-3 font-bold">${toNum(r.kg, 2)} kg</td>
+                        <td class="p-3">${toIDR(r.price)}</td>
+                        <td class="p-3 font-semibold text-slate-900">${toIDR(n(r.kg) * n(r.price))}</td>
+                        <td class="p-3 text-slate-500">${esc(r.note) || '—'}</td>
+                        <td class="p-3 text-right">
+                          <button onclick="confirmDeleteItem('feed', '${esc(r.id)}', 'transaksi pakan ${toNum(r.kg, 1)} kg')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* PANEN VIEW */
+    function getHarvestHTML(s) {
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = [...getRows('harvest')].sort((a, b) => b.date.localeCompare(a.date));
+
+      return `
+        <div class="space-y-6">
+          <!-- Harvest Stats -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Ayam Terpanen</span>
+              <div class="text-2xl font-black text-slate-800">${toNum(s.totalHarvestBirds, 0)} <span class="text-xs font-normal text-slate-500">ekor</span></div>
+              <div class="text-xs text-slate-400 mt-1">Sisa di kandang: ${toNum(s.currentLive, 0)} ekor</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Total Bobot Panen</span>
+              <div class="text-2xl font-black text-emerald-700">${toNum(s.totalHarvestKg, 2)} <span class="text-xs font-normal text-slate-500">kg</span></div>
+              <div class="text-xs text-slate-400 mt-1">Rata-rata: ${s.totalHarvestBirds > 0 ? toNum(s.totalHarvestKg / s.totalHarvestBirds, 3) + ' kg/ekor' : '—'}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Total Omzet Penjualan</span>
+              <div class="text-2xl font-black text-slate-800">${toIDR(s.harvestRevenue)}</div>
+              <div class="text-xs text-slate-400 mt-1">Realisasi penerimaan tunai/tempo</div>
+            </div>
+          </div>
+
+          <!-- Harvest Form -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+              Catat Panen (Penjarangan / Panen Raya Final)
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">Masukkan data timbang nota panen dari bakul atau broker unggas.</p>
+
+            <form id="harvestForm" onsubmit="handleHarvestSubmit(event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Panen</label>
+                  <input type="date" name="date" value="${today}" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Ayam (Ekor)</label>
+                  <input type="number" id="harvestBirdsInput" name="birds" min="1" max="${s.currentLive}" placeholder="Maks: ${s.currentLive}" oninput="calcHarvestAvg()" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Total Tonase Bobot (Kg)</label>
+                  <input type="number" step="0.01" id="harvestKgInput" name="kg" min="0.1" placeholder="Contoh: 1250.5" oninput="calcHarvestAvg()" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <span id="harvestAvgBadge" class="text-[11px] text-slate-400 mt-1 inline-block">Rata-rata: — kg/ekor</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Harga Jual per Kg (Rp)</label>
+                  <input type="number" name="price" value="${s.cycle.sellPrice}" min="0" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Pembeli / Bakul</label>
+                  <input type="text" name="buyer" placeholder="Contoh: UD. Berkah Unggas" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4"></i> Simpan Data Panen
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Harvest History -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <i data-lucide="history" class="w-5 h-5 text-emerald-600"></i>
+              Riwayat Pengeluaran Panen
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Umur Panen</th>
+                    <th class="p-3">Jumlah (Ekor)</th>
+                    <th class="p-3">Total Bobot (Kg)</th>
+                    <th class="p-3">Rata-rata Bobot</th>
+                    <th class="p-3">Harga / Kg</th>
+                    <th class="p-3">Total Omzet</th>
+                    <th class="p-3">Pembeli</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rows.length === 0 ? `<tr><td colspan="9" class="p-4 text-center text-slate-400">Belum ada catatan panen.</td></tr>` : ''}
+                  ${rows.map(r => {
+                    const avg = n(r.birds) > 0 ? n(r.kg) / n(r.birds) : 0;
+                    return `
+                      <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-900">${esc(r.date)}</td>
+                        <td class="p-3">Hari ke-${getAgeAtDate(r.date)}</td>
+                        <td class="p-3 font-bold">${toNum(r.birds, 0)} ekor</td>
+                        <td class="p-3 font-bold text-emerald-700">${toNum(r.kg, 2)} kg</td>
+                        <td class="p-3">${toNum(avg, 3)} kg</td>
+                        <td class="p-3">${toIDR(r.price)}</td>
+                        <td class="p-3 font-bold text-slate-900">${toIDR(n(r.kg) * n(r.price))}</td>
+                        <td class="p-3 text-slate-500">${esc(r.buyer) || '—'}</td>
+                        <td class="p-3 text-right">
+                          <button onclick="confirmDeleteItem('harvest', '${esc(r.id)}', 'data panen ${toNum(r.birds, 0)} ekor')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* BIAYA OPERASIONAL VIEW */
+    function getExpensesHTML(s) {
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = [...getRows('expenses')].sort((a, b) => b.date.localeCompare(a.date));
+
+      const categories = [
+        'OVK (Obat/Vaksin/Kimia)',
+        'Sekam',
+        'Gas/Pemanas',
+        'Listrik',
+        'Tenaga Kerja',
+        'Air',
+        'Transportasi',
+        'Desinfektan Kandang',
+        'Peralatan/Perawatan',
+        'Lain-lain'
+      ];
+
+      return `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Total Biaya Operasional (Non-Pakan & DOC)</span>
+              <div class="text-2xl font-black text-slate-800">${toIDR(s.expenseCost)}</div>
+              <div class="text-xs text-slate-400 mt-1">${rows.length} pos transaksi tercatat</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Biaya Pembelian DOC Awal</span>
+              <div class="text-2xl font-black text-slate-800">${toIDR(s.docCost)}</div>
+              <div class="text-xs text-slate-400 mt-1">${toNum(s.cycle.doc, 0)} ekor @ ${toIDR(s.cycle.docPrice)}</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-xs text-slate-500 font-semibold block mb-1">Total Biaya Berjalan Keseluruhan</span>
+              <div class="text-2xl font-black text-rose-700">${toIDR(s.runningCost)}</div>
+              <div class="text-xs text-slate-400 mt-1">DOC + Pakan Terpakai + Biaya Ops</div>
+            </div>
+          </div>
+
+          <!-- Expenses Form -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+              Catat Pengeluaran Operasional / OVK
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">Catat seluruh pos biaya penunjang produksi agar perhitungan HPP dan proyeksi laba akurat.</p>
+
+            <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
+                  <input type="date" name="date" value="${today}" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori Biaya</label>
+                  <select name="category" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nominal Biaya (Rp)</label>
+                  <input type="number" name="amount" min="1" placeholder="Contoh: 350000" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Rincian</label>
+                  <input type="text" name="note" placeholder="Contoh: Vaksin ND Hitchner B1 5 vial" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+              </div>
+              <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4"></i> Simpan Catatan Biaya
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Expenses History -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <i data-lucide="history" class="w-5 h-5 text-emerald-600"></i>
+              Riwayat Pengeluaran Operasional
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Kategori</th>
+                    <th class="p-3">Nominal (Rp)</th>
+                    <th class="p-3">Keterangan</th>
+                    <th class="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rows.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada catatan biaya.</td></tr>` : ''}
+                  ${rows.map(r => `
+                    <tr class="hover:bg-slate-50 transition">
+                      <td class="p-3 font-semibold text-slate-900">${esc(r.date)}</td>
+                      <td class="p-3"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-medium">${esc(r.category)}</span></td>
+                      <td class="p-3 font-bold text-slate-900">${toIDR(r.amount)}</td>
+                      <td class="p-3 text-slate-500">${esc(r.note) || '—'}</td>
+                      <td class="p-3 text-right">
+                        <button onclick="confirmDeleteItem('expenses', '${esc(r.id)}', 'biaya ${esc(r.category)} (${toIDR(r.amount)})')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* FORECAST & IP CALCULATOR VIEW */
+    function getForecastHTML(s) {
+      const c = s.cycle;
+
+      return `
+        <div class="space-y-6">
+          <!-- IP Explainer Card -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100">
+              <div>
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <i data-lucide="award" class="w-5 h-5 text-amber-500"></i>
+                  Indeks Performa (IP) Broiler Breakdown
+                </h3>
+                <p class="text-xs text-slate-500">Parameter patokan efisiensi manajemen pemeliharaan ayam broiler modern.</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-500">Nilai IP Berjalan:</span>
+                <div class="text-2xl font-black text-slate-800">${s.ip ? toNum(s.ip, 1) : '—'}</div>
+                <span class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full border ${s.ipCategory.color}">${s.ipCategory.text}</span>
+              </div>
+            </div>
+
+            <!-- Formula Box -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-mono text-slate-700 leading-relaxed mb-4">
+              <strong>Rumus Standar:</strong><br>
+              IP = [ Daya Hidup (%) × Rata-rata Bobot (kg) ] ÷ [ FCR × Rata-rata Umur (hari) ] × 100
+              <div class="mt-2 text-slate-500 font-sans text-[11px]">
+                Perhitungan Anda saat ini: [ ${toNum(s.survivalRate, 1)}% × ${toNum(s.currentAvgWeightKg, 3)} kg ] ÷ [ ${s.runningFcr ? toNum(s.runningFcr, 3) : '1.5'} × ${s.calendarAge} hari ] × 100 = <strong>${s.ip ? toNum(s.ip, 1) : '—'}</strong>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
+              <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50">
+                <span class="text-slate-400 block text-[10px]">Kurang</span>
+                <span class="font-bold text-rose-600">&lt; 325</span>
+              </div>
+              <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50">
+                <span class="text-slate-400 block text-[10px]">Cukup</span>
+                <span class="font-bold text-amber-600">325 – 350</span>
+              </div>
+              <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50">
+                <span class="text-slate-400 block text-[10px]">Baik</span>
+                <span class="font-bold text-emerald-600">351 – 400</span>
+              </div>
+              <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50">
+                <span class="text-slate-400 block text-[10px]">Istimewa</span>
+                <span class="font-bold text-farm-700">&gt; 400</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Projections Table -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-5 h-5 text-emerald-600"></i>
+              Simulasi Proyeksi Laba Bersih Panen Selesai
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">
+              Simulasi berdasarkan populasi tersisa ${toNum(s.currentLive, 0)} ekor sampai panen target umur ${c.targetAge} hari dengan asumsi FCR target ${toNum(c.targetFcr, 2)}.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Populasi Saat Ini</span>
+                  <span class="font-bold text-slate-900">${toNum(s.currentLive, 0)} ekor</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Estimasi Ekor Panen Tersisa</span>
+                  <span class="font-bold text-slate-900">${toNum(s.projectedHarvestBirds, 0)} ekor</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Estimasi Bobot Panen Tersisa</span>
+                  <span class="font-bold text-slate-900">${toNum(s.projectedHarvestKg, 1)} kg</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Target Harga Jual / kg</span>
+                  <span class="font-bold text-emerald-700">${toIDR(c.sellPrice)}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Kebutuhan Tambahan Pakan</span>
+                  <span class="font-bold text-slate-900">${toNum(s.projectedRemainingFeedKg, 1)} kg</span>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Estimasi Biaya Pakan Tambahan</span>
+                  <span class="font-bold text-slate-900">${toIDR(s.projectedRemainingFeedKg * s.avgFeedPricePerKg)}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Biaya Realisasi Berjalan</span>
+                  <span class="font-bold text-slate-900">${toIDR(s.runningCost)}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Estimasi Total Biaya Produksi</span>
+                  <span class="font-bold text-rose-700">${toIDR(s.projectedTotalCost)}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 text-xs">
+                  <span class="text-slate-600">Estimasi Total Pendapatan</span>
+                  <span class="font-bold text-emerald-700">${toIDR(s.projectedTotalRevenue)}</span>
+                </div>
+                <div class="flex justify-between items-center py-2.5 bg-emerald-50/80 px-3 rounded-lg border border-emerald-200 text-xs">
+                  <span class="font-bold text-emerald-950">Proyeksi Laba Bersih</span>
+                  <span class="text-base font-black ${s.projectedProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+                    ${toIDR(s.projectedProfit)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- BEP Analysis -->
+            <div class="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-xs text-slate-500 font-semibold block mb-1">BEP Harga Impas (Break Even Point / kg)</span>
+                <div class="text-xl font-bold text-slate-800">${toIDR(s.bepPricePerKg)} / kg</div>
+                <p class="text-[11px] text-slate-500 mt-1">Jika harga pasar di atas angka ini, maka siklus menghasilkan profit bersih.</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-xs text-slate-500 font-semibold block mb-1">BEP Tonase Minimal (Kg Total Panen)</span>
+                <div class="text-xl font-bold text-slate-800">${toNum(s.bepKgNeeded, 1)} kg</div>
+                <p class="text-[11px] text-slate-500 mt-1">Total berat ayam hidup yang harus terjual untuk menutup seluruh modal.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* BACKUP & EXPORT VIEW */
+    function getBackupHTML(s) {
+      return `
+        <div class="space-y-6">
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="database" class="w-5 h-5 text-emerald-600"></i>
+              Cadangan & Pemulihan Data (JSON)
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">
+              Seluruh data tersimpan aman di browser Anda. Selalu lakukan backup rutin agar data tidak terhapus saat membersihkan cache perangkat.
+            </p>
+
+            <div class="flex flex-wrap gap-3">
+              <button onclick="exportJSONBackup()" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i> Unduh Cadangan JSON
+              </button>
+
+              <label class="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg shadow-xs transition flex items-center gap-2 cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4 text-emerald-600"></i> Impor Berkas JSON
+                <input type="file" id="importJsonFile" accept=".json" onchange="handleJSONImport(event)" class="hidden">
+              </label>
+
+              <button onclick="confirmResetAll()" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition flex items-center gap-2">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset ke Data Demo
+              </button>
+            </div>
+          </div>
+
+          <!-- CSV Export Section -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-6">
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
+              Ekspor Laporan ke Spreadsheet (CSV)
+            </h3>
+            <p class="text-xs text-slate-500 mb-5">Unduh data dalam format CSV untuk dibuka di Microsoft Excel atau Google Sheets.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 hover:bg-white transition">
+                <h4 class="text-xs font-bold text-slate-800 mb-1">Data Harian Kandang</h4>
+                <p class="text-[11px] text-slate-500 mb-3">Mortalitas, sampling timbang, suhu, kelembaban, & air.</p>
+                <button onclick="exportCSV('daily')" class="w-full py-2 bg-white border border-slate-300 hover:border-emerald-600 text-slate-700 hover:text-emerald-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh CSV Harian
+                </button>
+              </div>
+
+              <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 hover:bg-white transition">
+                <h4 class="text-xs font-bold text-slate-800 mb-1">Data Logistik Pakan</h4>
+                <p class="text-[11px] text-slate-500 mb-3">Transaksi pakan masuk, konsumsi harian, dan harga per kg.</p>
+                <button onclick="exportCSV('feed')" class="w-full py-2 bg-white border border-slate-300 hover:border-emerald-600 text-slate-700 hover:text-emerald-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh CSV Pakan
+                </button>
+              </div>
+
+              <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 hover:bg-white transition">
+                <h4 class="text-xs font-bold text-slate-800 mb-1">Rekap Panen & Keuangan</h4>
+                <p class="text-[11px] text-slate-500 mb-3">Data penimbangan tonase panen, pembeli, dan rincian biaya ops.</p>
+                <button onclick="exportCSV('harvest')" class="w-full py-2 bg-white border border-slate-300 hover:border-emerald-600 text-slate-700 hover:text-emerald-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh CSV Panen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ==============================================================
+       5. FORM SUBMISSIONS & VALIDATIONS
+       ============================================================== */
+    function handleCycleSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+
+      const newCycle = {
+        id: uid(),
+        farm: data.farm.trim(),
+        house: data.house.trim(),
+        date: data.date,
+        doc: n(data.doc),
+        docPrice: n(data.docPrice),
+        targetAge: n(data.targetAge),
+        targetWeight: n(data.targetWeight),
+        targetFcr: n(data.targetFcr),
+        sellPrice: n(data.sellPrice)
+      };
+
+      if (!newCycle.farm || !newCycle.house) {
+        showToast('Nama peternakan dan kandang harus diisi.', 'error');
+        return;
+      }
+      if (newCycle.doc <= 0) {
+        showToast('Jumlah DOC harus lebih dari 0.', 'error');
+        return;
+      }
+
+      state.cycles.push(newCycle);
+      state.active = newCycle.id;
+      saveState();
+      renderNav();
+      renderContent();
+      showToast('Siklus baru berhasil ditambahkan dan diaktifkan.');
+    }
+
+    function handleDailySubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+      const cycle = getActiveCycle();
+
+      if (data.date < cycle.date) {
+        showToast('Tanggal catatan tidak boleh sebelum tanggal DOC masuk!', 'error');
+        return;
+      }
+
+      // Check duplicate date
+      const existing = getRows('daily').find(r => r.date === data.date);
+      if (existing) {
+        showToast(`Catatan harian untuk tanggal ${data.date} sudah ada. Hapus data sebelumnya jika ingin memperbarui.`, 'error');
+        return;
+      }
+
+      const dead = n(data.dead);
+      const cull = n(data.cull);
+      const liveAvailable = getLivePopulationAt(data.date);
+
+      if (dead + cull > liveAvailable) {
+        showToast(`Mortalitas & afkir (${dead + cull} ekor) melebihi populasi ayam hidup (${liveAvailable} ekor)!`, 'error');
+        return;
+      }
+
+      const item = {
+        id: uid(),
+        cycleId: cycle.id,
+        date: data.date,
+        dead: dead,
+        cull: cull,
+        weight: data.weight ? n(data.weight) : null,
+        samples: data.samples ? n(data.samples) : null,
+        temp: data.temp ? n(data.temp) : null,
+        humidity: data.humidity ? n(data.humidity) : null,
+        water: data.water ? n(data.water) : null,
+        note: (data.note || '').trim()
+      };
+
+      state.daily.push(item);
+      saveState();
+      renderContent();
+      showToast('Pencatatan harian berhasil disimpan.');
+    }
+
+    function handleFeedSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+      const cycle = getActiveCycle();
+
+      if (data.date < cycle.date) {
+        showToast('Tanggal transaksi tidak boleh sebelum chick-in!', 'error');
+        return;
+      }
+
+      const kg = n(data.kg);
+      const price = n(data.price);
+      if (kg <= 0) {
+        showToast('Jumlah pakan harus lebih besar dari 0.', 'error');
+        return;
+      }
+
+      // Validasi stok cukup jika pakai pakan
+      if (data.kind === 'pakai') {
+        const stats = calculateStats();
+        if (stats.feedStock < kg) {
+          showToast(`Stok pakan gudang tidak mencukupi (${toNum(stats.feedStock, 1)} kg tersedia, ingin pakai ${toNum(kg, 1)} kg).`, 'error');
+          return;
+        }
+      }
+
+      const item = {
+        id: uid(),
+        cycleId: cycle.id,
+        date: data.date,
+        kind: data.kind,
+        kg: kg,
+        price: price,
+        note: (data.note || '').trim()
+      };
+
+      state.feed.push(item);
+      saveState();
+      renderContent();
+      showToast('Transaksi pakan berhasil disimpan.');
+    }
+
+    function handleHarvestSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+      const cycle = getActiveCycle();
+
+      if (data.date < cycle.date) {
+        showToast('Tanggal panen tidak boleh sebelum chick-in!', 'error');
+        return;
+      }
+
+      const birds = n(data.birds);
+      const kg = n(data.kg);
+      const price = n(data.price);
+      const live = getLivePopulationAt(data.date);
+
+      if (birds <= 0 || kg <= 0) {
+        showToast('Jumlah ekor dan bobot harus lebih dari 0.', 'error');
+        return;
+      }
+
+      if (birds > live) {
+        showToast(`Jumlah ayam panen (${birds} ekor) melebihi populasi saat ini (${live} ekor)!`, 'error');
+        return;
+      }
+
+      const item = {
+        id: uid(),
+        cycleId: cycle.id,
+        date: data.date,
+        birds: birds,
+        kg: kg,
+        price: price,
+        buyer: (data.buyer || '').trim()
+      };
+
+      state.harvest.push(item);
+      saveState();
+      renderContent();
+      showToast('Data panen berhasil disimpan.');
+    }
+
+    function handleExpenseSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+      const cycle = getActiveCycle();
+
+      const amount = n(data.amount);
+      if (amount <= 0) {
+        showToast('Nominal biaya harus lebih dari 0.', 'error');
+        return;
+      }
+
+      const item = {
+        id: uid(),
+        cycleId: cycle.id,
+        date: data.date,
+        category: data.category,
+        amount: amount,
+        note: (data.note || '').trim()
+      };
+
+      state.expenses.push(item);
+      saveState();
+      renderContent();
+      showToast('Biaya operasional berhasil dicatat.');
+    }
+
+    /* Small Helpers for Live Forms */
+    function updateEstimatedAge(dateVal) {
+      const el = document.getElementById('ageBadge');
+      if (el) {
+        const age = getAgeAtDate(dateVal);
+        el.textContent = `Umur: Hari ke-${age}`;
+      }
+    }
+
+    function calcHarvestAvg() {
+      const birds = n(document.getElementById('harvestBirdsInput')?.value);
+      const kg = n(document.getElementById('harvestKgInput')?.value);
+      const badge = document.getElementById('harvestAvgBadge');
+      if (badge) {
+        if (birds > 0 && kg > 0) {
+          const avg = kg / birds;
+          badge.textContent = `Rata-rata: ${toNum(avg, 3)} kg/ekor`;
+          badge.className = 'text-[11px] text-emerald-700 font-semibold mt-1 inline-block';
+        } else {
+          badge.textContent = 'Rata-rata: — kg/ekor';
+          badge.className = 'text-[11px] text-slate-400 mt-1 inline-block';
+        }
+      }
+    }
+
+    function adjustFeedPriceDefault(kind) {
+      const priceInput = document.getElementById('feedPriceInput');
+      if (!priceInput) return;
+      const stats = calculateStats();
+      if (kind === 'pakai') {
+        priceInput.value = Math.round(stats.avgFeedPricePerKg);
+      }
+    }
+
+    /* ==============================================================
+       6. CONFIRMATION MODALS & TOASTS (No browser alert/confirm)
+       ============================================================== */
+    let confirmCallback = null;
+
+    function openConfirmModal(title, message, onConfirm) {
+      const modal = document.getElementById('confirmModal');
+      document.getElementById('confirmModalTitle').textContent = title;
+      document.getElementById('confirmModalMessage').textContent = message;
+      confirmCallback = onConfirm;
+      modal.classList.remove('hidden');
+    }
+
+    document.getElementById('confirmModalCancel').onclick = () => {
+      document.getElementById('confirmModal').classList.add('hidden');
+      confirmCallback = null;
+    };
+
+    document.getElementById('confirmModalSubmit').onclick = () => {
+      if (confirmCallback) confirmCallback();
+      document.getElementById('confirmModal').classList.add('hidden');
+      confirmCallback = null;
+    };
+
+    function confirmDeleteItem(type, id, label) {
+      openConfirmModal(
+        'Hapus Data',
+        `Apakah Anda yakin ingin menghapus ${label}? Data yang dihapus tidak dapat dikembalikan.`,
+        () => {
+          state[type] = (state[type] || []).filter(item => item.id !== id);
+          saveState();
+          renderContent();
+          showToast('Data berhasil dihapus.');
+        }
+      );
+    }
+
+    function confirmDeleteCycle(cycleId, houseName) {
+      if (state.cycles.length <= 1) {
+        showToast('Tidak dapat menghapus satu-satunya siklus tersisa.', 'error');
+        return;
+      }
+      openConfirmModal(
+        'Hapus Seluruh Siklus',
+        `Apakah Anda yakin ingin menghapus siklus "${houseName}"? Seluruh data harian, pakan, panen, dan biaya siklus ini akan ikut terhapus.`,
+        () => {
+          state.cycles = state.cycles.filter(c => c.id !== cycleId);
+          state.daily = state.daily.filter(r => r.cycleId !== cycleId);
+          state.feed = state.feed.filter(r => r.cycleId !== cycleId);
+          state.harvest = state.harvest.filter(r => r.cycleId !== cycleId);
+          state.expenses = state.expenses.filter(r => r.cycleId !== cycleId);
+
+          if (state.active === cycleId) {
+            state.active = state.cycles[0].id;
+          }
+          saveState();
+          renderNav();
+          renderContent();
+          showToast('Siklus kandang berhasil dihapus.');
+        }
+      );
+    }
+
+    function confirmResetAll() {
+      openConfirmModal(
+        'Reset ke Data Awal Demo',
+        'Tindakan ini akan menghapus semua riwayat kandang saat ini dan mengembalikan data demo standar. Lanjutkan?',
+        () => {
+          state = defaultSeed();
+          saveState();
+          renderNav();
+          renderContent();
+          showToast('Data berhasil di-reset ke kondisi awal.');
+        }
+      );
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const isError = type === 'error';
+      toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold transform transition-all duration-300 translate-y-3 opacity-0 ${
+        isError 
+          ? 'bg-rose-900/90 text-white border-rose-700 backdrop-blur' 
+          : 'bg-emerald-950/90 text-white border-emerald-700 backdrop-blur'
+      }`;
+
+      toast.innerHTML = `
+        <i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-4 h-4 shrink-0 ${isError ? 'text-rose-400' : 'text-emerald-400'}"></i>
+        <span>${esc(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      // Trigger transition
+      setTimeout(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      }, 20);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    /* ==============================================================
+       7. BACKUP, EXPORT & IMPORT UTILITIES
+       ============================================================== */
+    function downloadBlob(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
+
+    function exportJSONBackup() {
+      const dataStr = JSON.stringify(state, null, 2);
+      const filename = `BroilerPro_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      downloadBlob(filename, dataStr, 'application/json');
+      showToast('Cadangan JSON berhasil diunduh.');
+    }
+
+    function handleJSONImport(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Berkas terlalu besar (Maksimal 5MB).', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.cycles || !Array.isArray(parsed.cycles) || parsed.cycles.length === 0) {
+            throw new Error('Format JSON tidak sesuai dengan skema Broiler Farm Pro.');
+          }
+
+          openConfirmModal(
+            'Impor Data JSON',
+            `Ditemukan ${parsed.cycles.length} siklus dalam file cadangan. Timpa seluruh data yang ada sekarang dengan file ini?`,
+            () => {
+              state = parsed;
+              if (!state.cycles.some(c => c.id === state.active)) {
+                state.active = state.cycles[0].id;
+              }
+              saveState();
+              renderNav();
+              renderContent();
+              showToast('Data berhasil dipulihkan dari cadangan JSON.');
+            }
+          );
+        } catch (err) {
+          showToast('Gagal membaca berkas: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV(type) {
+      const cycle = getActiveCycle();
+      let lines = [];
+      let filename = `Broiler_${type}_${cycle.house.replace(/\s+/g, '_')}.csv`;
+
+      if (type === 'daily') {
+        lines.push(['Tanggal', 'Umur_Hari', 'Ayam_Mati', 'Ayam_Afkir', 'Bobot_Gram', 'Jumlah_Sampel', 'Suhu_C', 'Kelembapan_RH', 'Konsumsi_Air_L', 'Catatan']);
+        const rows = [...getRows('daily')].sort((a, b) => a.date.localeCompare(b.date));
+        rows.forEach(r => {
+          lines.push([
+            r.date,
+            getAgeAtDate(r.date),
+            r.dead,
+            r.cull,
+            r.weight || '',
+            r.samples || '',
+            r.temp || '',
+            r.humidity || '',
+            r.water || '',
+            r.note || ''
+          ]);
+        });
+      } else if (type === 'feed') {
+        lines.push(['Tanggal', 'Tipe_Transaksi', 'Jumlah_Kg', 'Harga_Per_Kg', 'Total_Rupiah', 'Keterangan']);
+        const rows = [...getRows('feed')].sort((a, b) => a.date.localeCompare(b.date));
+        rows.forEach(r => {
+          lines.push([
+            r.date,
+            r.kind === 'masuk' ? 'Restock/Masuk' : 'Konsumsi/Pakai',
+            r.kg,
+            r.price,
+            n(r.kg) * n(r.price),
+            r.note || ''
+          ]);
+        });
+      } else if (type === 'harvest') {
+        lines.push(['Tanggal', 'Umur_Hari', 'Jumlah_Ekor', 'Total_Kg', 'Rata2_Kg_Per_Ekor', 'Harga_Per_Kg', 'Total_Omzet', 'Pembeli']);
+        const rows = [...getRows('harvest')].sort((a, b) => a.date.localeCompare(b.date));
+        rows.forEach(r => {
+          const avg = n(r.birds) > 0 ? (n(r.kg) / n(r.birds)).toFixed(3) : 0;
+          lines.push([
+            r.date,
+            getAgeAtDate(r.date),
+            r.birds,
+            r.kg,
+            avg,
+            r.price,
+            n(r.kg) * n(r.price),
+            r.buyer || ''
+          ]);
+        });
+      }
+
+      const csvContent = '\uFEFF' + lines.map(row => 
+        row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(';')
+      ).join('\r\n');
+
+      downloadBlob(filename, csvContent, 'text/csv;charset=utf-8');
+      showToast(`Berkas CSV ${type} berhasil diunduh.`);
+    }
+
+    /* ==============================================================
+       8. INITIALIZATION
+       ============================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderNav();
+      renderContent();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Broiler Farm Pro",
+  "description": "Sistem pencatatan ternak broiler mandiri, monitoring FCR, Indeks Performa (IP), stok pakan, panen, dan proyeksi laba rugi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
